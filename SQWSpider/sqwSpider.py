@@ -2,7 +2,7 @@ import requests
 from lxml import etree
 import csv
 import time
-
+import sql
 # 首页url
 home_page_url = 'http://www.socom.cn'
 # 详情页url
@@ -127,7 +127,7 @@ def get_all_detail_url(home_page_url):
     return last_city_list
 
 # 提取详情页的数据
-def parser_detail(resp):
+def parser_detail(resp, db):
     detail = {}
     if resp:
         html = resp.text
@@ -148,10 +148,11 @@ def parser_detail(resp):
             detail['经济类型'] = info[9].strip().split('：')[-1]
             detail['公司产品'] = info[10].strip().split('：')[-1]
             detail['公司简介'] = info[11].strip().split('：')[-1]
-            with open('sqw.csv', 'a', newline='') as csv_file:
-                writer = csv.writer(csv_file)
-                print([info for info in detail.values()])
-                writer.writerow([info for info in detail.values()])
+            # with open('sqw.csv', 'a', newline='') as csv_file:
+            #     writer = csv.writer(csv_file)
+            #     print([info for info in detail.values()])
+            #     writer.writerow([info for info in detail.values()])
+            sql.insert_detail(db, detail)
             return detail
         else:
             return None
@@ -159,11 +160,10 @@ def parser_detail(resp):
 
 
 def main():
-    # print(parser_detail(get_html(detail_url)))
-    # print(parse_home_page(home_page_url))
-    with open('sqw.csv', 'w', newline='') as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(['公司名称', '地址', '电话', '传真', '手机', '网址', '邮箱', '联系人', '公司人数', '注册资金', '经济类型', '公司产品', '公司简介'])
+    db = sql.init()
+    # with open('sqw.csv', 'w', newline='') as csv_file:
+    #     writer = csv.writer(csv_file)
+    #     writer.writerow(['公司名称', '地址', '电话', '传真', '手机', '网址', '邮箱', '联系人', '公司人数', '注册资金', '经济类型', '公司产品', '公司简介'])
     detail_urls = get_all_detail_url(home_page_url)
     # 遍历所有的城市
     for url in detail_urls:
@@ -176,7 +176,7 @@ def main():
             # 遍历所有的企业
             for corp in corp_url:
                 print('公司链接', corp)
-                detail = parser_detail(get_html(corp))
+                detail = parser_detail(get_html(corp), db)
                 time.sleep(1)
         # detail = parser_detail(get_html(url))
         #     writer.writerow([info for info in detail.values()])
